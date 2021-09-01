@@ -39,3 +39,6 @@ function deleteEmail() {
                 alert(data.message);
         })
 }
+
+
+
