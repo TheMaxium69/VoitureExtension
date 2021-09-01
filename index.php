@@ -24,6 +24,8 @@ class ExtVoiture {
         register_uninstall_hook(__FILE__, array('ExtVoiture', 'uninstall'));
         add_action('wp_loaded', array($this, 'saveVoiture'), 1);
         add_action('wp_loaded', array($this, 'checkInfo'), 2);
+
+        new ExVoiture_Admin();
     }
 
     public static function install() {
@@ -38,10 +40,10 @@ class ExtVoiture {
 
     public static function loadFiles()
     {
-        wp_register_style('ExtVoiture', plugins_url('extend.css', __FILE__));
+        wp_register_style('ExtVoiture', plugins_url('extend2.css', __FILE__));
         wp_enqueue_style('ExtVoiture');
 
-        wp_register_script('ExtVoiture', plugins_url('extend.js', __FILE__));
+        wp_register_script('ExtVoiture', plugins_url('extend2.js', __FILE__));
         wp_enqueue_script('ExtVoiture');
 
         wp_localize_script('ExtVoiture', 'myFormScript', array(
@@ -109,6 +111,42 @@ class ExtVoiture {
         $message = $exVoiture_Session->destroy();
     }
 
-}
+    public function handleDeleteEmail()
+    {
+        if (array_key_exists("id", $_POST) && is_numeric($_POST["id"])) {
+            $result = $this->deleteEmail($_POST["id"]);
+            if ($result) {
+                echo json_encode([
+                    "result" => true,
+                    "message" => "Email bien supprimé"
+                ]);
+            } else {
+                echo json_encode([
+                    "result" => false,
+                    "message" => "Une erreur est survenue lors de la suppression"
+                ]);
+            }
+        } else {
+            echo json_encode([
+                "result" => false,
+                "message" => "L'ID du contact à supprimer n'est pas indiqué"
+            ]);
+        }
+        exit();
+    }
 
-new ExtVoiture();
+    public function deleteEmail($id)
+    {
+        global $wpdb;
+
+        $result = $wpdb->delete("{$wpdb->prefix}voiture", array("id" => $id));
+        return $result;
+    }
+
+
+
+}
+$extVoiture = new ExtVoiture();
+
+add_action('wp_ajax_nopriv_exvoiture_delete', array($extVoiture, 'handleDeleteEmail'));
+add_action('wp_ajax_exvoiture_delete', array($extVoiture, 'handleDeleteEmail'));
