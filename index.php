@@ -10,6 +10,8 @@ Version: 1.0-BETA
 */
 
 require_once "exvoiture.php";
+require_once "exvoiture_sesssion.php";
+require_once "exvoiture_admin.php";
 
 class ExtVoiture {
     public function __construct()
@@ -17,11 +19,11 @@ class ExtVoiture {
         add_action( 'widgets_init', function () {
             register_widget('ExVoiture_Widget');
         });
-
+        add_action('init', array('ExtVoiture', 'loadFiles'));
         register_activation_hook(__FILE__, array('ExtVoiture', 'install'));
         register_uninstall_hook(__FILE__, array('ExtVoiture', 'uninstall'));
-
         add_action('wp_loaded', array($this, 'saveVoiture'), 1);
+        add_action('wp_loaded', array($this, 'checkInfo'), 2);
     }
 
     public static function install() {
@@ -34,6 +36,19 @@ class ExtVoiture {
         $wpdb->query("DROP TABLE IF EXISTS {$wpdb->prefix}voiture;");
     }
 
+    public static function loadFiles()
+    {
+        wp_register_style('ExtVoiture', plugins_url('extend.css', __FILE__));
+        wp_enqueue_style('ExtVoiture');
+
+        wp_register_script('ExtVoiture', plugins_url('extend.js', __FILE__));
+        wp_enqueue_script('ExtVoiture');
+
+        wp_localize_script('ExtVoiture', 'myFormScript', array(
+            'adminUrl' => admin_url('admin-ajax.php')
+        ));
+    }
+
     public function saveVoiture() {
 
         if (isset($_POST['plaque']) && !empty($_POST['plaque']) &&
@@ -42,6 +57,9 @@ class ExtVoiture {
             isset($_POST['model']) && !empty($_POST['model']) &&
             isset($_POST['year']) && !empty($_POST['year'])
         ) {
+
+            $exVoiture_Session = new ExVoiture_Session();
+
                 $plaque = $_POST['plaque'];
                 $name = $_POST['name'];
                 $brand = $_POST['brand'];
@@ -63,16 +81,34 @@ class ExtVoiture {
 
                     $result = $wpdb->insert("{$wpdb->prefix}voiture", $datas);
                     if ($result === false) {
-                       // $myFormulaire_Session->createMessage("error", "Il y a une erreur, réseillez plus tarrd");
+                       $exVoiture_Session->createMessage("error", "Il y a une erreur, réseillez plus tarrd");
                     } else {
-                      //  $myFormulaire_Session->createMessage("success", "Ajout dans le newsletter effectuer.");
+                       $exVoiture_Session->createMessage("success", "Ajout de votre voiture effectuez.");
                     }
                 } else {
-                   // $myFormulaire_Session->createMessage("error", "Vous etes déjà inscrit a notre newsletter.");
+                    $exVoiture_Session->createMessage("error", "Votre plaque est déjà connue de nos service.");
                 }
 
         }
     }
+
+    public function checkInfo()
+    {
+        $exVoiture_Session = new ExVoiture_Session();
+
+        $message = $exVoiture_Session->getMessage();
+
+        if ($message !== false) {
+            echo ("
+                <p class='ex-voiture-info " . $message["type"] . "'>
+                    " . $message["message"] . "
+                </p>
+            ");
+        }
+
+        $message = $exVoiture_Session->destroy();
+    }
+
 }
 
 new ExtVoiture();
