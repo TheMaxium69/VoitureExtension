@@ -18,8 +18,10 @@ class ExtVoiture {
             register_widget('ExVoiture_Widget');
         });
 
-        register_activation_hook(__FILE__, array('MyFormulaire', 'install'));
-        register_uninstall_hook(__FILE__, array('MyFormulaire', 'uninstall'));
+        register_activation_hook(__FILE__, array('ExtVoiture', 'install'));
+        register_uninstall_hook(__FILE__, array('ExtVoiture', 'uninstall'));
+
+        add_action('wp_loaded', array($this, 'saveVoiture'), 1);
     }
 
     public static function install() {
@@ -40,7 +42,6 @@ class ExtVoiture {
             isset($_POST['model']) && !empty($_POST['model']) &&
             isset($_POST['year']) && !empty($_POST['year'])
         ) {
-
                 $plaque = $_POST['plaque'];
                 $name = $_POST['name'];
                 $brand = $_POST['brand'];
